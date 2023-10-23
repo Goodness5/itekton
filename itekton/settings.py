@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'accounts',
     'drf_yasg',
     'corsheaders',
+    'fleets',
+    'vehicles',
     'rest_framework.authtoken',
 ]
 
