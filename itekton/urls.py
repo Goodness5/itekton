@@ -21,24 +21,30 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Your API",
+        title="Itekton fleet management",
         default_version='v1',
-        description="Your API description",
-        terms_of_service="https://www.yourapp.com/terms/",
-        contact=openapi.Contact(email="contact@yourapp.com"),
-        license=openapi.License(name="Your License"),
+        description="",
+        # terms_of_service="https://www.yourapp.com/terms/",
+        # contact=openapi.Contact(email="contact@yourapp.com"),
+        # license=openapi.License(name="Your License"),
     ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
+   public=True,
+   authentication_classes=(TokenAuthentication,),
+   # Add this section to specify security scheme
+
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('fleets/', include('fleets.urls')),
+    path('vehicles/', include('vehicles.urls')),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
 
 if settings.DEBUG:
