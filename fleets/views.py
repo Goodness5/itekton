@@ -12,6 +12,7 @@ class FleetListView(generics.ListCreateAPIView):
     parser_classes = (MultiPartParser, FormParser)
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    
 
     def create(self, request, *args, **kwargs):
         try:
