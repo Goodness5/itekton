@@ -1,5 +1,5 @@
 from django.db import models
-from vehicles.models import Fleet
+from fleets.models import Fleet
 
 class Vehicle(models.Model):
     fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
