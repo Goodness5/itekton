@@ -13,3 +13,9 @@ class FleetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fleet
         fields = ['id', 'company_name', 'registration_id', 'address', 'company_logo', 'profile_picture']
+
+class SendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    
+class VerifyOTPSerializer(serializers.Serializer):
+    otp = serializers.CharField(min_length=5, max_length=5)

@@ -35,7 +35,7 @@ schema_view = get_schema_view(
     ),
    public=True,
    authentication_classes=(TokenAuthentication,),
-   # Add this section to specify security scheme
+#    form_parameter_location=openapi.FORM_PARAMETER_LOCATIONS.query,
 
 )
 

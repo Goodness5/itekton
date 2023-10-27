@@ -7,3 +7,5 @@ class Fleet(models.Model):
     registration_id = models.CharField(max_length=50)
     address = models.CharField(max_length=255)
     company_logo = models.ImageField(upload_to='company_logos/')
+    verification_otp = models.CharField(max_length=5, null=True, blank=True)
+    otp_created_at = models.DateTimeField(null=True, blank=True)

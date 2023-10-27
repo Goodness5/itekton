@@ -1,10 +1,14 @@
+import random
+from django.core.mail import send_mail
 from rest_framework import generics, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from .models import Fleet
-from .serializers import FleetSerializer
+from .serializers import FleetSerializer, VerifyOTPSerializer, SendOTPSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 class FleetListView(generics.ListCreateAPIView):
     queryset = Fleet.objects.all()
@@ -72,3 +76,81 @@ class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
             return super().destroy(request, *args, **kwargs)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+
+
+
+def generate_otp():
+    return str(random.randint(10000, 99999))
+
+def send_otp_email(email, otp):
+    subject = 'OTP Verification'
+    message = f'Your OTP for account verification is: {otp}'
+    from_email = 'goodnesskolapo@gmail.com'
+    recipient_list = [email]
+
+    send_mail(subject, message, from_email, recipient_list)
+
+
+
+class SendOTPView(generics.CreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = SendOTPSerializer 
+
+    def create(self, request, *args, **kwargs):
+            user = request.user
+            email = user.email
+
+            # Check if user is already verified
+            if user.verified:
+                return Response({'error': 'User is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if OTP has already been sent
+            if user.fleet.verification_otp:
+                return Response({'error': 'OTP has already been sent. Please check your email.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            otp = generate_otp()
+            user.fleet.verification_otp = otp
+            user.fleet.otp_created_at = timezone.now()  # Add timestamp
+            user.fleet.save()
+
+            # Send OTP via email
+            send_otp_email(email, otp)
+
+            return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
+class VerifyOTPView(generics.CreateAPIView):
+    serializer_class = VerifyOTPSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        otp = request.data.get('otp')
+
+        # Check if user is already verified
+        if user.verified:
+            return Response({'error': 'User is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        stored_otp = user.fleet.verification_otp
+        otp_created_at = user.fleet.otp_created_at
+
+        # Check if OTP exists and hasn't expired (e.g., 5 minutes)
+        if stored_otp and otp_created_at:
+            current_time = timezone.now()  # Use timezone-aware datetime
+            expiration_time = otp_created_at + timedelta(minutes=5)  # Adjust duration as needed
+
+            if current_time <= expiration_time and otp == stored_otp:
+                user.verified = True
+                user.save()
+
+                # Delete the OTP
+                user.fleet.verification_otp = None
+                user.fleet.otp_created_at = None
+                user.fleet.save()
+
+                return Response({'message': 'Account verified successfully.'}, status=status.HTTP_200_OK)
+
+        return Response({'error': 'Invalid OTP or OTP has expired. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)

@@ -5,8 +5,12 @@ from .serializers import SignupSerializer, AdditionalInfoSerializer, SigninSeria
 from django.contrib.auth import authenticate
 from .models import CustomUser
 from rest_framework.authtoken.models import Token
+from .serializers import CustomUserDetailSerializer
+from drf_yasg.utils import swagger_auto_schema
+
 
 class SignupView(generics.CreateAPIView):
+    """Register  user here with email and password"""
     serializer_class = SignupSerializer
 
     def create(self, request, *args, **kwargs):
@@ -20,6 +24,7 @@ class SignupView(generics.CreateAPIView):
             return response
 
 class AdditionalInfoView(generics.RetrieveUpdateAPIView):
+    """complete user Registration takes in first name, last name and phone number and user id as a url slug"""
     http_method_names = ['patch']
     serializer_class = AdditionalInfoSerializer
     queryset = CustomUser.objects.all()
@@ -35,7 +40,11 @@ class AdditionalInfoView(generics.RetrieveUpdateAPIView):
         self.perform_update(serializer)
         return Response(serializer.data)
 
+
+
+
 class SigninView(generics.CreateAPIView):
+    """Login a user here with email and password"""
     serializer_class = SigninSerializer
 
     def create(self, request, *args, **kwargs):
@@ -48,6 +57,16 @@ class SigninView(generics.CreateAPIView):
             token, created = Token.objects.get_or_create(user=user)
             return Response({
                 'token': token.key,
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'phone_number': user.phone_number,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'role': user.role,
+                    'profile_picture': user.profile_picture.url if user.profile_picture else None,
+                    # Add other user attributes as needed
+                },
                 'message': 'Authentication successful.'
             }, status=status.HTTP_200_OK)
         else:
@@ -65,3 +84,15 @@ class SigninView(generics.CreateAPIView):
                 'error': error_message,
                 'message': 'Authentication failed.'
             }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class UserDetailView(generics.RetrieveAPIView):
+    """Get a user details from tthe user table by passing the user id as a slug"""
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserDetailSerializer
+
+
+class UserListView(generics.ListAPIView):
+    """Retrieves data for all users """
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserDetailSerializer
