@@ -2,7 +2,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Vehicle, Driver
+from .models import Vehicle, Driver, Location
 from .serializers import VehicleSerializer, DriverSerializer
 from itekton.permissions import IsVerified
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -24,7 +24,16 @@ class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = VehicleSerializer
     permission_classes = [IsAuthenticated, IsVerified]
     
-
+    def update_location(self, request, *args, **kwargs):
+        vehicle = self.get_object()
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        if latitude is not None and longitude is not None:
+            Location.objects.create(vehicle=vehicle, latitude=latitude, longitude=longitude)
+            return Response({'message': 'Location updated successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid latitude or longitude'}, status=status.HTTP_400_BAD_REQUEST)
+        
     def handle_exception(self, exc):
         response = super().handle_exception(exc)
         return Response({'error': str(exc)}, status=response.status_code)

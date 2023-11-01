@@ -28,3 +28,13 @@ class Driver(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Location(models.Model):
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    def __str__(self):
+        return f"{self.vehicle.name} - {self.timestamp}"
+

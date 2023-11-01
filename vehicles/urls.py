@@ -6,4 +6,5 @@ urlpatterns = [
     path('vehicles/<int:pk>/', VehicleDetailView.as_view(), name='vehicle-detail'),
     path('drivers/', DriverListView.as_view(), name='driver-list'),
     path('drivers/<int:pk>/', DriverDetailView.as_view(), name='driver-detail'),
+    path('<int:pk>/update_location/', VehicleDetailView.as_view(), name='vehicle-update-location'),
 ]

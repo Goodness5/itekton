@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Vehicle, Driver
+from .models import Vehicle, Driver, Location
 class DriverSerializer(serializers.ModelSerializer):
     drivers_image = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True, allow_null=True, required=False)
     vehicle = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all(), required=False) 
@@ -39,5 +39,9 @@ class VehicleSerializer(serializers.ModelSerializer):
         return data
 
 
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = ['latitude', 'longitude', 'timestamp']
 
 # Token 607e388f53a0a3eb342a8262e87098d7a346701e
