@@ -28,7 +28,6 @@ class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
     def handle_exception(self, exc):
         response = super().handle_exception(exc)
         return Response({'error': str(exc)}, status=response.status_code)
-
 class DriverListView(generics.ListCreateAPIView):
     queryset = Driver.objects.all()
     serializer_class = DriverSerializer
@@ -41,7 +40,7 @@ class DriverListView(generics.ListCreateAPIView):
             if vehicle_id:
                 vehicle = Vehicle.objects.get(pk=vehicle_id)
                 if vehicle.fleet == self.request.user.fleet:
-                    serializer.save(vehicle=vehicle)
+                    serializer.save(vehicle_id=vehicle_id, fleet=self.request.user.fleet)
                 else:
                     return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
             else:
@@ -62,7 +61,7 @@ class DriverDetailView(generics.RetrieveUpdateDestroyAPIView):
         if vehicle_id:
             try:
                 vehicle = Vehicle.objects.get(pk=vehicle_id, fleet=self.request.user.fleet)
-                serializer.save(vehicle=vehicle)
+                serializer.save(vehicle_id=vehicle_id, fleet=self.request.user.fleet)
             except Vehicle.DoesNotExist:
                 return Response({'error': 'Vehicle does not exist or unauthorized'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -71,4 +70,33 @@ class DriverDetailView(generics.RetrieveUpdateDestroyAPIView):
     def handle_exception(self, exc):
         response = super().handle_exception(exc)
         return Response({'error': str(exc)}, status=response.status_code)
+
+
+class FleetDriversListView(generics.ListAPIView):
+    """"get all fleet drivers by passing the fleet id"""
+    serializer_class = DriverSerializer
+    permission_classes = [IsAuthenticated, IsVerified]
+
+    def get_queryset(self):
+        fleet_id = self.kwargs['fleet_id']
+        return Driver.objects.filter(vehicle__fleet_id=fleet_id)
+
+class FleetVehiclesListView(generics.ListAPIView):
+    """"get a list of all vehicles belonging to a fleet"""
+    serializer_class = VehicleSerializer
+    permission_classes = [IsAuthenticated, IsVerified]
+
+    def get_queryset(self):
+        fleet_id = self.kwargs['fleet_id']
+        return Vehicle.objects.filter(fleet_id=fleet_id)
+    
+
+class FleetDriversVehiclesListView(generics.ListAPIView):
+    """get all FleetDrivers and the vehicles for a fleet"""
+    serializer_class = DriverSerializer
+    permission_classes = [IsAuthenticated, IsVerified]
+
+    def get_queryset(self):
+        fleet_id = self.kwargs['fleet_id']
+        return Driver.objects.filter(vehicle__fleet_id=fleet_id)
 

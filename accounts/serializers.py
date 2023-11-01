@@ -36,3 +36,15 @@ class CustomUserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'phone_number', 'first_name', 'last_name', 'role', 'profile_picture', 'verified']
+
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class CompletePasswordResetSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+    confirm_new_password = serializers.CharField(write_only=True)

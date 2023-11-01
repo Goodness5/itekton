@@ -9,6 +9,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timedelta
 from django.utils import timezone
+from itekton.permissions import IsVerified
+from accounts.models import CustomUser
 
 class FleetListView(generics.ListCreateAPIView):
     queryset = Fleet.objects.all()
@@ -31,7 +33,7 @@ class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Fleet.objects.all()
     serializer_class = FleetSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def perform_update(self, serializer):
         company_name = self.request.data.get('company_name')
@@ -101,26 +103,45 @@ class SendOTPView(generics.CreateAPIView):
     serializer_class = SendOTPSerializer 
 
     def create(self, request, *args, **kwargs):
-            user = request.user
-            email = user.email
+        user = request.user
+        email = request.data.get('email')
+
+        isuser = CustomUser.objects.filter(email=email)
+        try:
+            # Check if the provided email matches the authenticated user's email
+            if not isuser:
+                return Response({'error': 'user email does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email != user.email:
+                return Response({'error': 'invalid email address.'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Check if user is already verified
             if user.verified:
                 return Response({'error': 'User is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Check if user has a fleet
+            if not hasattr(user, 'fleet'):
+                return Response({'error': 'User does not have a fleet.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            fleet = user.fleet
+
             # Check if OTP has already been sent
-            if user.fleet.verification_otp:
+            if fleet.verification_otp:
                 return Response({'error': 'OTP has already been sent. Please check your email.'}, status=status.HTTP_400_BAD_REQUEST)
 
             otp = generate_otp()
-            user.fleet.verification_otp = otp
-            user.fleet.otp_created_at = timezone.now()  # Add timestamp
-            user.fleet.save()
+            fleet.verification_otp = otp
+            fleet.otp_created_at = timezone.now()  # Add timestamp
+            fleet.save()
 
             # Send OTP via email
             send_otp_email(email, otp)
 
             return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class VerifyOTPView(generics.CreateAPIView):
     serializer_class = VerifyOTPSerializer
     authentication_classes = [TokenAuthentication]

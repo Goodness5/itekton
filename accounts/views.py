@@ -1,12 +1,16 @@
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.mail import send_mail
 from .serializers import SignupSerializer, AdditionalInfoSerializer, SigninSerializer
 from django.contrib.auth import authenticate
 from .models import CustomUser
 from rest_framework.authtoken.models import Token
-from .serializers import CustomUserDetailSerializer
-from drf_yasg.utils import swagger_auto_schema
+from .serializers import CustomUserDetailSerializer, ResetPasswordSerializer, CompletePasswordResetSerializer
+from django.contrib.auth.models import User
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_str, force_bytes
+from django.contrib.auth.tokens import default_token_generator
 
 
 class SignupView(generics.CreateAPIView):
@@ -96,3 +100,61 @@ class UserListView(generics.ListAPIView):
     """Retrieves data for all users """
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserDetailSerializer
+
+
+def send_reset_password_mail(email, resetlink):
+    subject = 'Password reset request'
+    message = f'Your reset password link is: {resetlink}'
+    from_email = 'goodnesskolapo@gmail.com'
+    recipient_list = [email]
+
+    send_mail(subject, message, from_email, recipient_list)
+
+
+
+class ResetPasswordView(generics.CreateAPIView):
+    """Request for reset password link user password by providing email"""
+    serializer_class = ResetPasswordSerializer
+
+    def create(self, request, *args, **kwargs):
+        email = request.data.get('email')
+
+        user = CustomUser.objects.filter(email=email).first() 
+
+        if user is not None:
+            # Generate a token for password reset
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+            # Generate the reset link
+            resetlink = f"http://127.0.0.1:8000/reset-password/{uid}/{token}/"
+
+            # Send the reset link to the user's email
+            send_reset_password_mail(user.email, resetlink)
+
+            return Response({'message': 'Password reset initiated. Please check your email.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+class CompletePasswordResetView(generics.CreateAPIView):
+    """Complete the password reset process"""
+    serializer_class = CompletePasswordResetSerializer
+    def create(self, request, *args, **kwargs):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+        confirm_new_password = request.data.get('confirm_new_password')
+        
+        uid = force_str(urlsafe_base64_decode(uid))  # Decode and convert to string
+        
+        user = CustomUser.objects.filter(pk=uid).first()
+
+        if user is not None and default_token_generator.check_token(user, token):
+            if new_password == confirm_new_password:
+                user.set_password(new_password)
+                user.save()
+                return Response({'message': 'Password reset successful.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid reset link.'}, status=status.HTTP_400_BAD_REQUEST)
