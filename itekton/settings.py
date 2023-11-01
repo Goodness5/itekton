@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     'drf_yasg',
-    'corsheaders',
     'fleets',
     'vehicles',
     'rest_framework.authtoken',
