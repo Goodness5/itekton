@@ -108,7 +108,7 @@ def send_reset_password_mail(email, resetlink):
     from_email = 'goodnesskolapo@gmail.com'
     recipient_list = [email]
 
-    send_mail(subject, message, from_email, recipient_list)
+    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
 
 
 

@@ -188,5 +188,6 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-server = smtplib.SMTP('smtp.office365.com', 587) 
-server.starttls()
+# EMAIL_USE_SSL = True
+# server = smtplib.SMTP('smtp.office365.com', 587) 
+# server.starttls()
