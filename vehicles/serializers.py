@@ -91,20 +91,12 @@ class VehicleSerializer(serializers.ModelSerializer):
 #         model = Vehicle
 #         fields = ['location']
 class LocationSerializer(serializers.ModelSerializer):
-    vehicle = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all(), required=False) 
     class Meta:
         model = Location
-        fields = ['vehicle','timestamp', 'latitude', 'longitude']
+        fields = ['timestamp', 'latitude', 'longitude']
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get('request')
-        
-        if request and 'retrieve' in request.path:
-            data['vehicle'] = VehicleSerializer(instance.vehicle).data
-        
-        return data
-
-
-
+class VehicleLocationAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vehicle
+        fields = ['id', 'assigned_location']
 # Token 607e388f53a0a3eb342a8262e87098d7a346701e
