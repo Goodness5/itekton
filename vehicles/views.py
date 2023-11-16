@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Vehicle, Driver, Location
 from .serializers import VehicleSerializer, DriverSerializer, LocationSerializer, VehicleLocationAssignmentSerializer
-from itekton.permissions import IsVerified, IsVehicleOwnerOrFleetOwner
+from itekton.permissions import IsVerified, IsVehicleOwner, IsFleetOwner
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
 class VehicleListView(generics.ListCreateAPIView):
@@ -173,21 +173,22 @@ def assign_driver_to_vehicle(request, vehicle_id, driver_id):
         return Response({'error': 'Driver does not exist or unauthorized'}, status=status.HTTP_400_BAD_REQUEST)
     
 
-class LocationListView(generics.CreateAPIView):
+class LocationListView(generics.ListCreateAPIView):
     serializer_class = LocationSerializer
-    permission_classes = [IsAuthenticated, IsVerified]
+    permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
 
     def get_queryset(self):
-        vehicle_id = self.kwargs['pk']
-        try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            locations = Location.objects.filter(vehicle=vehicle)
-            return locations
-        except Vehicle.DoesNotExist:
-            return Location.objects.none()
+        vehicle_id = self.kwargs['vehicle_id']
+        if vehicle_id:
+            try:
+                vehicle = Vehicle.objects.get(id=vehicle_id)
+                locations = Location.objects.filter(vehicle=vehicle)
+                return locations
+            except Vehicle.DoesNotExist:
+                return Location.objects.none()
 
-    def create(self, request, *args, **kwargs):
-        vehicle_id = self.kwargs['pk']
+    def post(self, request, *args, **kwargs):
+        vehicle_id = kwargs['vehicle_id']
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
 
@@ -199,44 +200,60 @@ class LocationListView(generics.CreateAPIView):
         except Vehicle.DoesNotExist:
             return Response({'error': 'Vehicle does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
 
-class LocationDetailView(generics.RetrieveUpdateDestroyAPIView):
+class LocationDetailView(generics.UpdateAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
-    permission_classes = [IsAuthenticated, IsVerified]
+    permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
+    lookup_url_kwarg = 'vehicle_id'
 
+    def update(self, request, *args, **kwargs):
+        vehicle_id = kwargs.get('vehicle_id')
+        if vehicle_id:
+            try:
+                vehicle = Vehicle.objects.get(id=vehicle_id)
 
-    # def get_queryset(self):
-    #     vehicle_id = self.kwargs['pk']
-    #     try:
-    #         vehicle = Vehicle.objects.get(id=vehicle_id)
-    #         locations = Location.objects.filter(vehicle=vehicle)
-    #         return locations
-    #     except Vehicle.DoesNotExist:
-    #         return Location.objects.none()
+                # Create a new Location instance and add it to the list
+                location = Location.objects.create(vehicle=vehicle, **request.data)
 
+                serializer = self.get_serializer(location)
+                return Response(serializer.data)
+            except Vehicle.DoesNotExist:
+                return Response({'error': 'Vehicle does not exist or unauthorized'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # def retrieve(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     serializer = self.get_serializer(instance, many=True)
-    #     return Response(serializer.data)
+class LatestLocationView(generics.RetrieveAPIView):
+    serializer_class = LocationSerializer
+    permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
+    lookup_url_kwarg = 'vehicle_id'
+
+    def get_queryset(self):
+        vehicle_id = self.kwargs['vehicle_id']
+        return Location.objects.filter(vehicle_id=vehicle_id).order_by('-timestamp')
+
+    def retrieve(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if queryset.exists():
+            latest_location = queryset.first()
+            serializer = self.get_serializer(latest_location)
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'vehicle Location not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class VehicleLocationAssignmentView(generics.CreateAPIView, generics.RetrieveUpdateAPIView):
     serializer_class = VehicleLocationAssignmentSerializer
-    permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwnerOrFleetOwner]
+    permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
     queryset = Vehicle.objects.all()
 
     def get(self, request, *args, **kwargs):
         # Access the vehicle ID from kwargs
         vehicle_id = kwargs.get('vehicle_id')
-
         try:
             # Retrieve the vehicle model
             vehicle = Vehicle.objects.get(id=vehicle_id)
 
             # Retrieve the location associated with the vehicle
             # location = Location.objects.get(vehicle=vehicle)
-
             # Serialize the data
             assigned_location_serilizer = VehicleLocationAssignmentSerializer(vehicle)
             vehicle_serializer = VehicleSerializer(vehicle)
@@ -249,7 +266,8 @@ class VehicleLocationAssignmentView(generics.CreateAPIView, generics.RetrieveUpd
         except Vehicle.DoesNotExist:
             return Response({'error': 'Vehicle not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request, vehicle_id):
+    def post(self, request, *args, **kwargs):
+        vehicle_id = kwargs.get('vehicle_id')
         try:
             vehicle = Vehicle.objects.get(id=vehicle_id)
             serializer = VehicleLocationAssignmentSerializer(data=request.data)

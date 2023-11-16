@@ -1,11 +1,15 @@
 from rest_framework import serializers
 from .models import TransitReport, Reminder, Alert, CriticalFault, Test, Registration
+from vehicles.serializers import VehicleSerializer
+from vehicles.models import Vehicle
 
 class TransitReportSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = TransitReport
-        fields = '__all__'
-
+        fields = ['id', 'vehicle', 'date', 'description']
+        read_only_fields = ['date']
 class ReminderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reminder

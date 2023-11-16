@@ -1,13 +1,29 @@
+
 from rest_framework import generics, status
 from rest_framework.response import Response
 from .models import TransitReport
 from .serializers import TransitReportSerializer
+from itekton.permissions import IsVehicleOwner, IsVerified
+from rest_framework.permissions import IsAuthenticated
+from vehicles.models import Vehicle
 
 class TransitReportView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
-    queryset = TransitReport.objects.all()
     serializer_class = TransitReportSerializer
+    permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
+
+    def get_queryset(self):
+        vehicle_id = self.kwargs.get('vehicle_id')
+        return TransitReport.objects.filter(vehicle_id=vehicle_id)
 
     def create(self, request, *args, **kwargs):
+        vehicle_id = self.kwargs.get('vehicle_id')
+        
+        try:
+            vehicle = Vehicle.objects.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({'error': 'Vehicle not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.data['vehicle'] = vehicle.id  # Initialize vehicle field with the provided vehicle_id
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
