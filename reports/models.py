@@ -7,6 +7,9 @@ class TransitReport(models.Model):
     date = models.DateTimeField(auto_now_add=True) 
     description = models.TextField()
 
+    def __str__(self):
+        return f'TransitReport-{self.id}'
+
 class Reminder(models.Model):
     fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)

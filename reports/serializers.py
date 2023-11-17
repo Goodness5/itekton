@@ -5,7 +5,6 @@ from vehicles.models import Vehicle
 
 class TransitReportSerializer(serializers.ModelSerializer):
     vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
-
     class Meta:
         model = TransitReport
         fields = ['id', 'vehicle', 'date', 'description']
