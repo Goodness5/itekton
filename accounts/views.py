@@ -90,12 +90,23 @@ class SigninView(generics.CreateAPIView):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class UserDetailView(generics.RetrieveAPIView):
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Get a user details from tthe user table by passing the user id as a slug"""
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserDetailSerializer
 
 
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.delete()
+        return Response({'message': 'User deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 class UserListView(generics.ListAPIView):
     """Retrieves data for all users """
     queryset = CustomUser.objects.all()

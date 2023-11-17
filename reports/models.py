@@ -11,31 +11,26 @@ class TransitReport(models.Model):
         return f'TransitReport-{self.id}'
 
 class Reminder(models.Model):
-    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True) 
     description = models.TextField()
 
 class Alert(models.Model):
-    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True) 
     description = models.TextField()
 
 class CriticalFault(models.Model):
-    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True) 
     description = models.TextField()
 
 class Test(models.Model):
-    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True) 
     outcome = models.BooleanField()  
 
 class Registration(models.Model):
-    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     expiration_date = models.DateTimeField() 
     reminder_date = models.DateTimeField() 

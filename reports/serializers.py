@@ -10,26 +10,35 @@ class TransitReportSerializer(serializers.ModelSerializer):
         fields = ['id', 'vehicle', 'date', 'description']
         read_only_fields = ['date']
 class ReminderSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Reminder
-        fields = '__all__'
+        fields = ['id', 'vehicle', 'date', 'description']
+        read_only_fields = ['date']
 
 class AlertSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Alert
-        fields = '__all__'
+        fields = ['id', 'vehicle', 'date', 'description']
+        read_only_fields = ['date']
 
 class CriticalFaultSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = CriticalFault
-        fields = '__all__'
+        fields = ['id', 'vehicle', 'date', 'description']
+        read_only_fields = ['date']
 
 class TestSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Test
-        fields = '__all__'
-
+        fields = ['id', 'vehicle', 'date', 'outcome']
+        read_only_fields = ['date']
 class RegistrationSerializer(serializers.ModelSerializer):
+    vehicle = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Registration
-        fields = '__all__'
+        fields = ['id', 'vehicle', 'date', 'description']
+        read_only_fields = ['date']
