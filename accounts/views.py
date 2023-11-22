@@ -11,7 +11,9 @@ from django.contrib.auth.models import User
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_str, force_bytes
 from django.contrib.auth.tokens import default_token_generator
-
+from rest_framework.permissions import IsAuthenticated
+from itekton.permissions import IsOwnerOrReadOnly
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class SignupView(generics.CreateAPIView):
     """Register  user here with email and password"""
@@ -94,7 +96,8 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Get a user details from tthe user table by passing the user id as a slug"""
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserDetailSerializer
-
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser]
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()

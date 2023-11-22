@@ -13,3 +13,4 @@ python-decouple
 requests
 django-cors-headers
 gunicorn
+django-notifications-hq

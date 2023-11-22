@@ -55,7 +55,6 @@ class DriverWithoutVehicleSerializer(serializers.ModelSerializer):
 
 
 
-# serializers.py
 class VehicleSerializer(serializers.ModelSerializer):
     vehicle_image = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True, allow_null=True, required=False )
     driver = serializers.PrimaryKeyRelatedField(queryset=Driver.objects.all(), required=False) 

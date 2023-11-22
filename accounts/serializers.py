@@ -36,7 +36,7 @@ class CustomUserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'phone_number', 'first_name', 'last_name', 'role', 'profile_picture', 'verified']
-
+        read_only_fields = ['verified']
 
 
 class ResetPasswordSerializer(serializers.Serializer):

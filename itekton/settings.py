@@ -40,11 +40,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'accounts',
     'drf_yasg',
+
+    # django-apps
+    'accounts',
     'fleets',
     'vehicles',
     'reports',
+    'settings',
+
+
+    'notifications',
     'rest_framework.authtoken',
 ]
 
@@ -191,3 +197,11 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 # EMAIL_USE_SSL = True
 # server = smtplib.SMTP('smtp.office365.com', 587) 
 # server.starttls()
+
+
+
+"""Notification settings"""
+
+DJANGO_NOTIFICATIONS_CONFIG = {
+    'USE_JSONFIELD': True,
+}
