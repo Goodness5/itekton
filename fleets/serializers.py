@@ -13,11 +13,20 @@ from .models import Fleet
 class FleetSerializer(serializers.ModelSerializer):
     company_logo = serializers.ImageField(max_length=None, use_url=True, required=False)
     profile_picture = serializers.ImageField(max_length=None, use_url=True, required=False)
+    owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Fleet
-        fields = ['id', 'company_name', 'registration_id', 'address', 'company_logo', 'profile_picture']
-
+        fields = ['id', 'company_name', 'registration_id', 'address', 'company_logo', 'profile_picture', 'owner']
+    
+    def get_user(self, obj):
+        user = obj.user
+        return {
+            'id': user.id,
+            'username': {user.firstname, user.lastname},
+            'email': {user.email},
+            'profile_picture': {user.profile_picture},
+        }
     def create(self, validated_data):
         # Handle company-related fields
         company_name = validated_data.get('company_name')
@@ -48,6 +57,25 @@ class FleetSerializer(serializers.ModelSerializer):
             user.save()
 
         return fleet
+    
+
+
+class FleetWithUserSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    def get_user(self, obj):
+        user = obj.user
+        return {
+            'id': user.id,
+            'username': {user.firstname, user.lastname},
+            'email': {user.email},
+            'profile_picture': {user.profile_picture},
+        }
+
+    class Meta:
+        model = Fleet
+        fields = ['id', 'company_name', 'registration_id', 'address', 'company_logo', 'profile_picture', 'user']
+
 class SendOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     

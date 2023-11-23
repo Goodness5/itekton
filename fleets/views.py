@@ -3,8 +3,9 @@ from django.core.mail import send_mail
 from rest_framework import generics, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from .models import Fleet
-from .serializers import FleetSerializer, VerifyOTPSerializer, SendOTPSerializer
+from .serializers import FleetSerializer, VerifyOTPSerializer, SendOTPSerializer, FleetWithUserSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timedelta
@@ -89,7 +90,21 @@ class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
             return super().destroy(request, *args, **kwargs)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_fleet(request):
+    try:
+        user = request.user 
+        fleet_instance = user.fleet
+
+        if not fleet_instance:
+            return Response({'error': 'User does not have a fleet'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = FleetWithUserSerializer(fleet_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
