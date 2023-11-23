@@ -9,7 +9,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timedelta
 from django.utils import timezone
-from itekton.permissions import IsVerified
+from itekton.permissions import IsVerified, IsFleetOwner, IsOwnerOrReadOnly
 from accounts.models import CustomUser
 
 class FleetListView(generics.ListCreateAPIView):
@@ -17,14 +17,23 @@ class FleetListView(generics.ListCreateAPIView):
     serializer_class = FleetSerializer
     parser_classes = (MultiPartParser, FormParser)
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-    
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    lookup_url_kwarg = 'fleet_id'
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = self.get_serializer(data=request.data)
+            user = request.user
+            fleet_instance = user.fleet
+
+            if fleet_instance:
+                # If a Fleet instance already exists for the user, return an error message
+                return Response({'error': 'User already has a fleet', 'fleet_id': fleet_instance.id}, status=status.HTTP_400_BAD_REQUEST)
+
+            # If no Fleet instance exists, create a new one
+            serializer = FleetSerializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            serializer.save(user=request.user)
+            serializer.save(user=user)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -33,7 +42,9 @@ class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Fleet.objects.all()
     serializer_class = FleetSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsVerified]
+    permission_classes = [IsAuthenticated, IsVerified, IsFleetOwner]
+    parser_classes = (MultiPartParser, FormParser)
+    lookup_url_kwarg = 'fleet_id'
 
     def perform_update(self, serializer):
         company_name = self.request.data.get('company_name')
