@@ -24,8 +24,9 @@ class FleetListView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             user = request.user
-            fleet_instance = Fleet.objects.get(user=user)
 
+            # Check if the user already has a fleet
+            fleet_instance = Fleet.objects.filter(user=user).first()
             if fleet_instance:
                 # If a Fleet instance already exists for the user, return an error message
                 return Response({'error': 'User already has a fleet', 'fleet_id': fleet_instance.id}, status=status.HTTP_400_BAD_REQUEST)
@@ -38,6 +39,7 @@ class FleetListView(generics.ListCreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Fleet.objects.all()
