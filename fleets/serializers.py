@@ -19,7 +19,7 @@ class FleetSerializer(serializers.ModelSerializer):
         model = Fleet
         fields = ['id', 'company_name', 'registration_id', 'address', 'company_logo', 'profile_picture', 'owner']
     
-    def get_user(self, obj):
+    def get_owner(self, obj):
         user = obj.user
         return {
             'id': user.id,
