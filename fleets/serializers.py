@@ -47,6 +47,7 @@ class FleetSerializer(serializers.ModelSerializer):
 
         return fleet
 
+
 class FleetWithUserSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
 

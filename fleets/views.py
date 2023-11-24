@@ -34,13 +34,11 @@ class FleetListView(generics.ListCreateAPIView):
             # If no Fleet instance exists, create a new one
             serializer = FleetSerializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
-            serializer.save(user=user)
+            serializer.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Fleet.objects.all()
     serializer_class = FleetSerializer
