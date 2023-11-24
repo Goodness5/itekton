@@ -18,13 +18,13 @@ class FleetListView(generics.ListCreateAPIView):
     serializer_class = FleetSerializer
     parser_classes = (MultiPartParser, FormParser)
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
     lookup_url_kwarg = 'fleet_id'
 
     def create(self, request, *args, **kwargs):
         try:
             user = request.user
-            fleet_instance = user.fleet
+            fleet_instance = Fleet.objects.get(user=user)
 
             if fleet_instance:
                 # If a Fleet instance already exists for the user, return an error message
