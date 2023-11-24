@@ -96,9 +96,11 @@ class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_fleet(request):
+    queryset = Fleet.objects.all()
     try:
         user = request.user 
-        fleet_instance = user.fleet
+        print(user)
+        fleet_instance = Fleet.objects.get(user=user)
 
         if not fleet_instance:
             return Response({'error': 'User does not have a fleet'}, status=status.HTTP_404_NOT_FOUND)
