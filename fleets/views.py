@@ -134,29 +134,30 @@ class SendOTPView(generics.CreateAPIView):
         user = request.user
         email = request.data.get('email')
 
-        isuser = CustomUser.objects.filter(email=email)
         try:
             # Check if the provided email matches the authenticated user's email
-            if not isuser:
-                return Response({'error': 'user email does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-            
             if email != user.email:
-                return Response({'error': 'invalid email address.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Invalid email address.'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Check if user is already verified
             if user.verified:
                 return Response({'error': 'User is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Check if user has a fleet
-            if not hasattr(user, 'fleet'):
+            try:
+                fleet = Fleet.objects.get(user=user)
+            except Fleet.DoesNotExist:
                 return Response({'error': 'User does not have a fleet.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            fleet = user.fleet
 
             # Check if OTP has already been sent
             if fleet.verification_otp:
-                return Response({'error': 'OTP has already been sent. Please check your email.'}, status=status.HTTP_400_BAD_REQUEST)
+                # Check if the existing OTP is still valid (created within the last 5 minutes)
+                time_difference = timezone.now() - fleet.otp_created_at
+                if time_difference.total_seconds() <= 5 * 60:
+                    # Optionally, you can resend the existing OTP here
+                    return Response({'error': 'OTP has already been sent. Please check your email.'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Generate a new OTP
             otp = generate_otp()
             fleet.verification_otp = otp
             fleet.otp_created_at = timezone.now()  # Add timestamp
@@ -169,6 +170,7 @@ class SendOTPView(generics.CreateAPIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class VerifyOTPView(generics.CreateAPIView):
     serializer_class = VerifyOTPSerializer
@@ -183,8 +185,8 @@ class VerifyOTPView(generics.CreateAPIView):
         if user.verified:
             return Response({'error': 'User is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        stored_otp = user.fleet.verification_otp
-        otp_created_at = user.fleet.otp_created_at
+        stored_otp = Fleet.objects.get(user=user).verification_otp
+        otp_created_at = Fleet.objects.get(user=user).otp_created_at
 
         # Check if OTP exists and hasn't expired (e.g., 5 minutes)
         if stored_otp and otp_created_at:
