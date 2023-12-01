@@ -71,6 +71,7 @@ class SigninView(generics.CreateAPIView):
                     'last_name': user.last_name,
                     'role': user.role,
                     'profile_picture': user.profile_picture.url if user.profile_picture else None,
+                    'verification': user.verified,
                     # Add other user attributes as needed
                 },
                 'message': 'Authentication successful.'
