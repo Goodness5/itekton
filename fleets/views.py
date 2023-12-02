@@ -98,15 +98,34 @@ def get_user_fleet(request):
     try:
         user = request.user 
         print(user)
+
         fleet_instance = Fleet.objects.get(user=user)
 
         if not fleet_instance:
             return Response({'error': 'User does not have a fleet'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = FleetWithUserSerializer(fleet_instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Handle the File Not Found exception
+        try:
+            # Debug print to check the file path
+            print(fleet_instance.profile_picture.path)
+
+            serializer = FleetWithUserSerializer(fleet_instance)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except FileNotFoundError:
+            # Log the error or handle it as needed
+            print("Profile picture not found. Using default.")
+
+            # Continue returning the data with a default value for the profile picture
+            serializer = FleetWithUserSerializer(fleet_instance, context={'default_profile_picture': 'default_path_to_image'})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except ObjectDoesNotExist:
+        return Response({'error': 'Fleet instance not found for the user'}, status=status.HTTP_404_NOT_FOUND)
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
