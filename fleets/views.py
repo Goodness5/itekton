@@ -90,41 +90,44 @@ class FleetDetailView(generics.RetrieveUpdateDestroyAPIView):
             return super().destroy(request, *args, **kwargs)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_fleet(request):
-    queryset = Fleet.objects.all()
     try:
-        user = request.user 
+        user = request.user
         print(user)
 
-        fleet_instance = Fleet.objects.get(user=user)
+        fleets = Fleet.objects.filter(user=user)
+        fleet_data = []
 
-        if not fleet_instance:
-            return Response({'error': 'User does not have a fleet'}, status=status.HTTP_404_NOT_FOUND)
+        for fleet_instance in fleets:
+            try:
+                # Debug print to check the file path
+                print(fleet_instance.profile_picture.path)
 
-        # Handle the File Not Found exception
-        try:
-            # Debug print to check the file path
-            print(fleet_instance.profile_picture.path)
+                serializer = FleetWithUserSerializer(fleet_instance)
+                fleet_data.append(serializer.data)
 
-            serializer = FleetWithUserSerializer(fleet_instance)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            except FileNotFoundError:
+                # Log the error or handle it as needed
+                print(f"Profile picture not found for fleet {fleet_instance.id}. Using default.")
 
-        except FileNotFoundError:
-            # Log the error or handle it as needed
-            print("Profile picture not found. Using default.")
+                # Continue without adding the faulty object to the result
+                continue
 
-            # Continue returning the data with a default value for the profile picture
-            serializer = FleetWithUserSerializer(fleet_instance, context={'default_profile_picture': 'default_path_to_image'})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(fleet_data, status=status.HTTP_200_OK)
 
-    except ObjectDoesNotExist:
-        return Response({'error': 'Fleet instance not found for the user'}, status=status.HTTP_404_NOT_FOUND)
+    except Fleet.DoesNotExist:
+        # Handle the case when no fleets exist for the user
+        return Response({'error': 'No fleets found for the user'}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
