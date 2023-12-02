@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Vehicle, Driver, Location
+from fleets.models import Fleet
 from .serializers import VehicleSerializer, DriverSerializer, LocationSerializer, VehicleLocationAssignmentSerializer
 from itekton.permissions import IsVerified, IsVehicleOwner, IsFleetOwner
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -290,3 +291,40 @@ class VehicleLocationAssignmentView(generics.CreateAPIView, generics.RetrieveUpd
 
         except Vehicle.DoesNotExist:
             return Response({'error': 'Vehicle not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsVerified, IsFleetOwner])
+def FleetVehicleLocationsView(request):
+    try:
+        # Get the fleet ID from the authenticated user
+        user = request.user
+        fleet_id = Fleet.objects.filter(user=user)
+
+        # Filter vehicles by fleet ID
+        vehicles = Vehicle.objects.filter(fleet_id=fleet_id)
+
+        # Retrieve the latest location for each vehicle
+        vehicle_locations = []
+        for vehicle in vehicles:
+            latest_location = Location.objects.filter(vehicle=vehicle).order_by('-timestamp').first()
+            if latest_location:
+                location_data = {
+                    'vehicle_id': vehicle.id,
+                    'vehicle_name': vehicle.name,
+                    'latitude': latest_location.latitude,
+                    'longitude': latest_location.longitude,
+                    'timestamp': latest_location.timestamp
+                }
+                vehicle_locations.append(location_data)
+
+        return Response(vehicle_locations, status=status.HTTP_200_OK)
+
+    except Vehicle.DoesNotExist:
+        return Response({'error': 'Vehicles not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

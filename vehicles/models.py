@@ -55,6 +55,7 @@ class Driver(models.Model):
         return self.name
     
 class Location(models.Model):
+    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE, editable=False, null=True)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     latitude = models.FloatField(null=True)
