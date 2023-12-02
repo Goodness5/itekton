@@ -17,13 +17,24 @@ class FleetSerializer(serializers.ModelSerializer):
 
     def get_user(self, obj):
         user = obj.user
+        profile_picture = user.profile_picture if user.profile_picture else None
+
+        # Check if the profile picture file exists
+        try:
+            if profile_picture:
+                with open(profile_picture.path, 'rb'):
+                    pass  # File exists, do nothing
+        except FileNotFoundError:
+            # Log the error or handle it as needed
+            print(f"Profile picture not found for user {user.id}. Using default.")
+            profile_picture = None
+
         return {
             'id': user.id,
-            'username': f'{user.first_name} {user.last_name}',
-            'email': user.email,
-            'profile_picture': user.profile_picture if user.profile_picture else None,
+            'name': {user.first_name, user.last_name},
+            'email': {user.email},
+            'profile_picture': profile_picture,
         }
-
     def create(self, validated_data):
         # Handle company-related fields
         company_logo = validated_data.pop('company_logo', None)

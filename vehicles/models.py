@@ -1,5 +1,4 @@
-# models.py
-# from django.db import models
+from django.utils import timezone
 from fleets.models import Fleet
 
 from django.contrib.gis.db import models as gis_models
@@ -16,7 +15,6 @@ class Vehicle(models.Model):
     color = models.CharField(max_length=20, default='')  
     vehicle_image = models.ImageField(upload_to='vehicle_images/', null=True)
     driver = models.ForeignKey('Driver', on_delete=models.SET_NULL, null=True, blank=True)
-    # Add a field for the assigned location (boundaries of the trip)
     assigned_location = models.PointField(null=True, blank=True)
 
     def set_assigned_location(self, coordinates):
@@ -37,7 +35,7 @@ class Vehicle(models.Model):
    
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        Location.objects.create(vehicle=self)
+        Location.objects.create(vehicle=self, fleet=self.fleet)
 
 
 
@@ -55,11 +53,15 @@ class Driver(models.Model):
         return self.name
     
 class Location(models.Model):
-    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE, editable=False, null=True)
+    fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE, editable=False)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
 
-    def __str__(self):
-        return f"{self.vehicle.name} - {self.timestamp}"
+    def save(self, *args, **kwargs):
+        # If the location does not have a fleet set, use the fleet of the associated vehicle
+        if not self.fleet:
+            self.fleet = self.vehicle.fleet
+
+        super().save(*args, **kwargs)

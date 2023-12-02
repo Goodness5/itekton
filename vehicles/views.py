@@ -141,7 +141,7 @@ class FleetDriversVehiclesListView(generics.ListAPIView):
 
 
 @api_view(['POST'])  
-@permission_classes([IsAuthenticated, IsVerified])  
+@permission_classes([IsAuthenticated, IsVerified, IsVehicleOwner])  
 def unassign_driver_from_vehicle(request, vehicle_id):
     try:
         vehicle = Vehicle.objects.get(pk=vehicle_id, fleet=request.user.fleet)
@@ -153,7 +153,7 @@ def unassign_driver_from_vehicle(request, vehicle_id):
     
 
 @api_view(['POST'])  
-@permission_classes([IsAuthenticated, IsVerified])      
+@permission_classes([IsAuthenticated, IsVerified, IsVehicleOwner])      
 def assign_driver_to_vehicle(request, vehicle_id, driver_id):
     try:
         vehicle = Vehicle.objects.get(pk=vehicle_id, fleet=request.user.fleet)
@@ -182,6 +182,7 @@ class LocationListView(generics.ListCreateAPIView):
         vehicle_id = self.kwargs['vehicle_id']
         if vehicle_id:
             try:
+                # fleet = Fleet.objects.filter(user=request.user)
                 vehicle = Vehicle.objects.get(id=vehicle_id)
                 locations = Location.objects.filter(vehicle=vehicle)
                 return locations
@@ -189,13 +190,14 @@ class LocationListView(generics.ListCreateAPIView):
                 return Location.objects.none()
 
     def post(self, request, *args, **kwargs):
+        fleet = Fleet.objects.get(user=request.user)
         vehicle_id = kwargs['vehicle_id']
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
 
         try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            location = Location.objects.create(vehicle=vehicle, latitude=latitude, longitude=longitude)
+            vehicle = Vehicle.objects.get(id=vehicle_id, fleet=fleet)
+            location = Location.objects.create(vehicle=vehicle, fleet=fleet, latitude=latitude, longitude=longitude)
             serializer = self.get_serializer(location)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Vehicle.DoesNotExist:
@@ -296,15 +298,16 @@ class VehicleLocationAssignmentView(generics.CreateAPIView, generics.RetrieveUpd
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsVerified, IsFleetOwner])
+@permission_classes([IsAuthenticated, IsVerified])
 def FleetVehicleLocationsView(request):
     try:
         # Get the fleet ID from the authenticated user
         user = request.user
-        fleet_id = Fleet.objects.filter(user=user)
+        fleet = Fleet.objects.get(user=user)
+        print('fleet::', fleet)
 
         # Filter vehicles by fleet ID
-        vehicles = Vehicle.objects.filter(fleet_id=fleet_id)
+        vehicles = Vehicle.objects.filter(fleet=fleet)
 
         # Retrieve the latest location for each vehicle
         vehicle_locations = []

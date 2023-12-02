@@ -58,11 +58,12 @@ class DriverWithoutVehicleSerializer(serializers.ModelSerializer):
 class VehicleSerializer(serializers.ModelSerializer):
     vehicle_image = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True, allow_null=True, required=False )
     driver = serializers.PrimaryKeyRelatedField(queryset=Driver.objects.all(), required=False) 
-    fleet_name = serializers.SerializerMethodField()
+    # fleet_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Vehicle
         exclude = ['fleet']
+        
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -75,8 +76,8 @@ class VehicleSerializer(serializers.ModelSerializer):
                 pass
         return data
 
-    def get_fleet_name(self, obj):
-        return obj.fleet.company_name if obj.fleet else None
+    # def get_fleet_name(self, obj):
+    #     return obj.fleet.company_name if obj.fleet else None
 
 
 
@@ -90,9 +91,40 @@ class VehicleSerializer(serializers.ModelSerializer):
 #         model = Vehicle
 #         fields = ['location']
 class LocationSerializer(serializers.ModelSerializer):
+    vehicle = serializers.SerializerMethodField()
+
+    def get_vehicle(self, obj):
+        vehicle = obj.vehicle
+        driver_info = {}
+
+        if vehicle:
+            driver = vehicle.driver
+            if driver:
+                driver_info = {
+                    'driver_id': driver.id,
+                    'driver_name': driver.name,
+                    'driver_image': driver.drivers_image,
+                    'driver_contact': driver.phone_number,
+                }
+
+        return {
+            'id': vehicle.id if vehicle else None,
+            'name': vehicle.name if vehicle else None,
+            'fleet': {
+                'id': vehicle.fleet.id if vehicle else None,
+                'company_name': vehicle.fleet.company_name if vehicle else None,
+                'driver': driver_info,
+            },
+            'timestamp': obj.timestamp,
+            'latitude': obj.latitude,
+            'longitude': obj.longitude,
+        }
+
     class Meta:
         model = Location
-        fields = ['timestamp', 'latitude', 'longitude']
+        fields = ['timestamp', 'latitude', 'longitude', 'vehicle']
+
+
 
 class VehicleLocationAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
