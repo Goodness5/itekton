@@ -210,13 +210,14 @@ class LocationDetailView(generics.UpdateAPIView):
     lookup_url_kwarg = 'vehicle_id'
 
     def update(self, request, *args, **kwargs):
+        fleet = Fleet.objects.get(user=request.user)
         vehicle_id = kwargs.get('vehicle_id')
         if vehicle_id:
             try:
                 vehicle = Vehicle.objects.get(id=vehicle_id)
 
                 # Create a new Location instance and add it to the list
-                location = Location.objects.create(vehicle=vehicle, **request.data)
+                location = Location.objects.create(fleet=fleet, vehicle=vehicle, **request.data)
 
                 serializer = self.get_serializer(location)
                 return Response(serializer.data)
