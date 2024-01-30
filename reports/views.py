@@ -14,8 +14,9 @@ class TransitReportInitialView(generics.ListCreateAPIView, generics.DestroyAPIVi
     permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
 
     def get_queryset(self):
-        vehicle_id = self.kwargs.get('vehicle_id')
-        return TransitReport.objects.filter(vehicle_id=vehicle_id)
+        fleet = Fleet.objects.get(user=self.request.user)
+        return TransitReport.objects.filter(fleet=fleet)
+
     
     def create(self, request, *args, **kwargs):
         vehicle_id = self.kwargs.get('vehicle_id')
@@ -264,8 +265,8 @@ class CriticalFaultInitialView(generics.ListCreateAPIView, generics.DestroyAPIVi
     permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
 
     def get_queryset(self):
-        vehicle_id = self.kwargs.get('vehicle_id')
-        return CriticalFault.objects.filter(vehicle_id=vehicle_id)
+        fleet = Fleet.objects.get(user=self.request.user)
+        return CriticalFault.objects.filter(fleet=fleet)
     
     def create(self, request, *args, **kwargs):
         vehicle_id = self.kwargs.get('vehicle_id')
@@ -342,8 +343,8 @@ class TestInitialView(generics.ListCreateAPIView, generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsVerified, IsVehicleOwner]
 
     def get_queryset(self):
-        vehicle_id = self.kwargs.get('vehicle_id')
-        return Test.objects.filter(vehicle_id=vehicle_id)
+        fleet = Fleet.objects.get(user=self.request.user)
+        return Test.objects.filter(fleet=fleet)
     
     def create(self, request, *args, **kwargs):
         vehicle_id = self.kwargs.get('vehicle_id')

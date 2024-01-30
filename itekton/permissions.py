@@ -54,6 +54,8 @@ class IsVehicleOwner(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         vehicle_id = view.kwargs.get('vehicle_id')
+        if request.method == 'GET' and not vehicle_id:
+            return True
         try:
             vehicle = Vehicle.objects.get(id=vehicle_id)
             if vehicle.fleet.user == request.user:
