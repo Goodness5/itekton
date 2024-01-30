@@ -54,15 +54,21 @@ class DriverWithoutVehicleSerializer(serializers.ModelSerializer):
         return obj.fleet.company_name if obj.fleet else None
 
 
-
 class VehicleSerializer(serializers.ModelSerializer):
-    vehicle_image = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True, allow_null=True, required=False )
-    driver = serializers.PrimaryKeyRelatedField(queryset=Driver.objects.all(), required=False) 
-    # fleet_name = serializers.SerializerMethodField()
+    vehicle_image = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True, allow_null=True, required=False)
+    driver = serializers.PrimaryKeyRelatedField(queryset=Driver.objects.all(), required=False)
+    name = serializers.CharField(required=True)
+    meter = serializers.DecimalField(required=True, max_digits=10, decimal_places=2)
+    make = serializers.CharField(required=True)
+    fuel_type = serializers.CharField(required=True)
+    color = serializers.CharField(required=True)
+# Token c39a46c0f4f7a9d5cd2fbffbf09dab25eaabafae
+    # Add 'name' and 'meter' fields and set them as required
 
     class Meta:
         model = Vehicle
         exclude = ['fleet']
+
         
 
     def to_representation(self, instance):

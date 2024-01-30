@@ -14,11 +14,20 @@ class VehicleListView(generics.ListCreateAPIView):
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [IsAuthenticated, IsVerified]                
 
-    def perform_create(self, serializer):
-        try:
-            serializer.save(fleet=self.request.user.fleet)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, request, *args, **kwargs):
+        # Ensure that required fields are present in the request data
+        required_fields = ['name', 'meter']
+        for field in required_fields:
+            if field not in request.data:
+                return Response({'error': f"{field} is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
+
+    # def perform_create(self, serializer):
+    #     try:
+    #         serializer.save(fleet=self.request.user.fleet)
+    #     except Exception as e:
+    #         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
