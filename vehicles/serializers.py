@@ -25,18 +25,23 @@ class DriverSerializer(serializers.ModelSerializer):
         return obj.fleet.company_name if obj.fleet else None
 
     def get_vehicle(self, obj):
-        try:
-            vehicle = Vehicle.objects.get(driver=obj)
-            return {
-                'id': vehicle.id,
-                'identification_number': vehicle.vehicle_identification_number,
-                'make': vehicle.make,
-                'meter': vehicle.meter,
-                'fuel_type': vehicle.fuel_type,
-                'color': vehicle.color,
-            }
-        except Vehicle.DoesNotExist:
+        vehicles = Vehicle.objects.filter(driver=obj)
+        if vehicles.exists():
+            return [
+                {
+                    'id': vehicle.id,
+                    'identification_number': vehicle.vehicle_identification_number,
+                    'make': vehicle.make,
+                    'meter': vehicle.meter,
+                    'fuel_type': vehicle.fuel_type,
+                    'color': vehicle.color,
+                }
+            for vehicle in vehicles
+            ]
+        else:
             return None
+
+
 
 class DriverWithoutVehicleSerializer(serializers.ModelSerializer):
     drivers_image = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True, allow_null=True, required=False)
@@ -58,10 +63,10 @@ class VehicleSerializer(serializers.ModelSerializer):
     vehicle_image = serializers.ImageField(max_length=None, allow_empty_file=True, allow_null=True, required=False)
     driver = serializers.PrimaryKeyRelatedField(queryset=Driver.objects.all(), required=False)
     name = serializers.CharField(required=True)
-    # meter = serializers.DecimalField(required=True, max_digits=10, decimal_places=2)
-    # make = serializers.CharField(required=True)
-    # fuel_type = serializers.CharField(required=True)
-    # color = serializers.CharField(required=True)
+    meter = serializers.DecimalField(required=True, max_digits=10, decimal_places=2)
+    make = serializers.CharField(required=True)
+    fuel_type = serializers.CharField(required=True)
+    color = serializers.CharField(required=True)
 # Token c39a46c0f4f7a9d5cd2fbffbf09dab25eaabafae
     # Add 'name' and 'meter' fields and set them as required
 
