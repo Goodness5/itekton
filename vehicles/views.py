@@ -117,7 +117,7 @@ class FleetDriversListView(generics.ListAPIView):
 
     def get_queryset(self):
         fleet_id = self.kwargs['fleet_id']
-        return Driver.objects.filter(vehicle__fleet_id=fleet_id)
+        return Driver.objects.filter(fleet=fleet_id)
 
 class FleetVehiclesListView(generics.ListAPIView):
     """"get a list of all vehicles belonging to a fleet"""
